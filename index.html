@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyFlow - To-Do List Keseharianmu (Navy Blue Edition)</title>
+    
+    <!-- PWA & Mobile Web App Meta Tags -->
+    <meta name="theme-color" content="#050b18">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DailyFlow">
+    
+    <!-- 1. TAILWIND CSS CDN (Sebagai Tambahan Opsional) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            950: '#172554',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    
+    <!-- STANDALONE NAVY BLUE THEME STYLESHEET (ANTI-CDN ERROR) -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header class="app-header">
+        <div class="header-container">
+            <!-- Logo & Brand -->
+            <div class="brand-wrapper">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div>
+                    <h1 class="brand-title">DailyFlow</h1>
+                    <p class="brand-subtitle">Pengatur Keseharian & Produktivitas</p>
+                </div>
+            </div>
+
+            <!-- Live Clock & Control Buttons -->
+            <div class="header-actions">
+                <div class="live-clock-badge">
+                    <span id="live-time">00:00:00 WIB</span>
+                    <span id="live-date">Memuat tanggal...</span>
+                </div>
+
+                <button id="toggle-sound-btn" title="Aktifkan / Matikan Efek Suara" class="icon-btn">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <button id="open-backup-modal-btn" title="Cadangkan / Pulihkan Data" class="icon-btn">
+                    <i class="fa-solid fa-database"></i>
+                </button>
+
+                <button id="theme-toggle-btn" title="Ganti Mode Gelap / Terang" class="icon-btn">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <!-- Banner Greeting & Motivational Quote -->
+        <section class="hero-banner">
+            <div class="hero-left">
+                <div class="hero-badge">
+                    <i class="fa-solid fa-sun" style="color: #fde047;"></i>
+                    <span id="greeting-badge">Semangat Hari Ini</span>
+                </div>
+                <h2 id="greeting-title" class="hero-title">
+                    Halo, Selamat Datang! 👋
+                </h2>
+                <p id="quote-text" class="hero-quote">
+                    "Setiap langkah kecil yang kamu selesaikan hari ini membawamu lebih dekat ke target besarmu."
+                </p>
+            </div>
+
+            <!-- Daily Progress Horizontal Bar (Tanpa SVG Path, 100% Anti-Error) -->
+            <div class="hero-progress-box">
+                <div class="hero-progress-top">
+                    <span class="hero-progress-label">Progres Harian</span>
+                    <span id="progress-percentage">0%</span>
+                </div>
+                
+                <div class="hero-progress-track">
+                    <div id="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+                
+                <div class="hero-progress-bottom">
+                    <span id="progress-text">0 / 0 Tugas Selesai</span>
+                    <span id="progress-subtext">Ayo mulai!</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats & Quick Add Routine Chips -->
+        <section class="stats-grid-row">
+            <!-- Card 1: Quick Rutinitas -->
+            <div class="app-card">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #2563eb;"></i>
+                        <h3 class="card-title">Rutinitas Harian Cepat (+ 1-Klik)</h3>
+                    </div>
+                    <span class="card-subtitle">Klik untuk langsung tambah</span>
+                </div>
+                <div class="habits-container" id="quick-habits-container">
+                    <!-- Loaded dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Card 2: Status Breakdown -->
+            <div class="app-card">
+                <div class="card-header">
+                    <span class="card-subtitle" style="font-weight: 700; text-transform: uppercase;">Statistik Hari Ini</span>
+                    <button id="reset-today-btn" title="Reset centang untuk hari baru" class="footer-link-btn" style="color: #2563eb; font-weight: 700;">
+                        <i class="fa-solid fa-rotate-right"></i> Reset Harian
+                    </button>
+                </div>
+                <div class="stat-boxes-grid">
+                    <div class="stat-box">
+                        <span id="stat-active" class="stat-number">0</span>
+                        <span class="stat-label">Belum</span>
+                    </div>
+                    <div class="stat-box">
+                        <span id="stat-completed" class="stat-number blue">0</span>
+                        <span class="stat-label">Selesai</span>
+                    </div>
+                    <div class="stat-box">
+                        <span id="stat-high-priority" class="stat-number red">0</span>
+                        <span class="stat-label">Prioritas</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Add Task Form Card -->
+        <section class="app-card">
+            <div class="card-header">
+                <div class="card-title-group">
+                    <span class="brand-logo" style="width: 32px; height: 32px; font-size: 14px;">
+                        <i class="fa-solid fa-plus"></i>
+                    </span>
+                    <h3 class="card-title">Tambah Kegiatan / Tugas Baru</h3>
+                </div>
+                <span class="card-subtitle">Pilih kategori & prioritas dengan cepat</span>
+            </div>
+
+            <form id="task-form" class="form-section">
+                <!-- 1. Input Judul Tugas Utama -->
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-pen-to-square input-icon"></i>
+                    <input type="text" id="task-input" required autocomplete="off"
+                           placeholder="Apa yang ingin kamu selesaikan hari ini? (cth: Selesaikan laporan mingguan, olahraga sore...)"
+                           class="main-task-input">
+                </div>
+
+                <!-- 2. Pilihan Kategori Berbasis CHIP -->
+                <div>
+                    <label class="form-group-label">1. Pilih Kategori:</label>
+                    <div class="pills-group" id="category-pills">
+                        <button type="button" data-val="Kerja" class="pill-btn cat-pill active-pill">
+                            💼 Kerja / Produktif
+                        </button>
+                        <button type="button" data-val="Rumah" class="pill-btn cat-pill">
+                            🏠 Rumah / Rutin
+                        </button>
+                        <button type="button" data-val="Kesehatan" class="pill-btn cat-pill">
+                            🧘 Kesehatan & Olahraga
+                        </button>
+                        <button type="button" data-val="Belajar" class="pill-btn cat-pill">
+                            📚 Belajar & Diri
+                        </button>
+                        <button type="button" data-val="Belanja" class="pill-btn cat-pill">
+                            🛒 Belanja & Urusan
+                        </button>
+                    </div>
+                    <input type="hidden" id="task-category" value="Kerja">
+                </div>
+
+                <!-- 3. Pilihan Prioritas Berbasis CHIP & Target Waktu -->
+                <div class="stats-grid-row" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <!-- Prioritas Chip -->
+                    <div>
+                        <label class="form-group-label">2. Tingkat Prioritas:</label>
+                        <div class="pills-group" id="priority-pills">
+                            <button type="button" data-val="Sedang" class="pill-btn prio-pill prio-sedang active-pill">
+                                🟡 Sedang
+                            </button>
+                            <button type="button" data-val="Tinggi" class="pill-btn prio-pill prio-tinggi">
+                                🔴 Tinggi (Penting!)
+                            </button>
+                            <button type="button" data-val="Santai" class="pill-btn prio-pill">
+                                🔵 Santai
+                            </button>
+                        </div>
+                        <input type="hidden" id="task-priority" value="Sedang">
+                    </div>
+
+                    <!-- Waktu Target & Preset -->
+                    <div>
+                        <label class="form-group-label">3. Target Jam (Opsional):</label>
+                        <div class="time-preset-row">
+                            <input type="time" id="task-time" class="time-input">
+                            
+                            <!-- Preset waktu cepat -->
+                            <div class="pills-group">
+                                <button type="button" onclick="document.getElementById('task-time').value='09:00'" class="preset-btn">
+                                    09:00
+                                </button>
+                                <button type="button" onclick="document.getElementById('task-time').value='14:00'" class="preset-btn">
+                                    14:00
+                                </button>
+                                <button type="button" onclick="document.getElementById('task-time').value='20:00'" class="preset-btn">
+                                    20:00
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Optional Notes Accordion/Toggle -->
+                <div>
+                    <button type="button" id="toggle-note-btn" class="footer-link-btn" style="color: #2563eb; font-size: 12px; font-weight: 700;">
+                        <i class="fa-solid fa-file-lines"></i> <span id="note-toggle-text">+ Tambah Catatan Tambahan (Opsional)</span>
+                    </button>
+                    <div id="note-input-container" class="hidden" style="margin-top: 10px;">
+                        <textarea id="task-note" rows="2" placeholder="Tulis rincian, daftar barang, atau catatan khusus di sini..."
+                                  class="main-task-input" style="padding: 12px 14px; font-weight: 500;"></textarea>
+                    </div>
+                </div>
+
+                <!-- 5. Tombol Submit Utama -->
+                <div>
+                    <button type="submit" class="submit-btn">
+                        <i class="fa-solid fa-circle-plus" style="font-size: 18px;"></i>
+                        <span>Simpan & Tambahkan Tugas Sekarang</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Filter, Search & Sorting Toolbar -->
+        <section class="app-card toolbar-card">
+            <!-- Search Bar -->
+            <div class="search-input-box">
+                <i class="fa-solid fa-magnifying-glass input-icon" style="font-size: 13px;"></i>
+                <input type="text" id="search-input" placeholder="Cari tugasmu di sini..." class="search-input">
+            </div>
+
+            <!-- Filter Status Pills -->
+            <div class="filter-tabs-group">
+                <button data-filter="all" class="filter-btn active">
+                    Semua (<span id="count-all">0</span>)
+                </button>
+                <button data-filter="active" class="filter-btn">
+                    Belum (<span id="count-active">0</span>)
+                </button>
+                <button data-filter="completed" class="filter-btn">
+                    Selesai (<span id="count-completed">0</span>)
+                </button>
+            </div>
+
+            <!-- Category Filter Dropdown -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <select id="category-filter" class="dropdown-select">
+                    <option value="all">📁 Semua Kategori</option>
+                    <option value="Kerja">💼 Kerja / Produktif</option>
+                    <option value="Rumah">🏠 Rumah / Rutin</option>
+                    <option value="Kesehatan">🧘 Kesehatan & Olahraga</option>
+                    <option value="Belajar">📚 Belajar & Diri</option>
+                    <option value="Belanja">🛒 Belanja & Urusan</option>
+                </select>
+
+                <select id="sort-filter" class="dropdown-select">
+                    <option value="created-desc">🕒 Terbaru</option>
+                    <option value="priority">🔥 Prioritas (Tinggi duluan)</option>
+                    <option value="time">⏰ Waktu Target</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Tasks List Container -->
+        <section id="task-list-section" class="tasks-list-container">
+            <!-- Dynamic task items inserted here -->
+        </section>
+
+        <!-- Empty State (Shown when no tasks match) -->
+        <div id="empty-state" class="empty-state-box" style="display: none;">
+            <div class="empty-icon-circle">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <h4 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">Belum Ada Tugas yang Ditampilkan</h4>
+            <p style="font-size: 13px; color: #64748b; max-w-sm: 360px; margin: 0 auto;">
+                Tambahkan kegiatan keseharianmu di atas, atau klik tombol rutinitas cepat untuk memulai!
+            </p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #2563eb; display: inline-block;"></span>
+                <span>Data tersimpan otomatis di perangkatmu (LocalStorage) • Edisi Biru Navy</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button id="clear-completed-btn" class="footer-link-btn">
+                    <i class="fa-solid fa-trash-can"></i> Hapus Semua yang Selesai
+                </button>
+                <span>•</span>
+                <button id="clear-all-btn" class="footer-link-btn">
+                    Hapus Semua Tugas
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Edit Task Modal -->
+    <div id="edit-modal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="card-title-group">
+                    <i class="fa-solid fa-pen" style="color: #2563eb;"></i>
+                    <h3 class="card-title">Edit Tugas</h3>
+                </div>
+                <button id="close-modal-btn" class="icon-btn" style="width: 32px; height: 32px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="edit-form" class="form-section" style="gap: 14px;">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="form-group-label">Nama Tugas</label>
+                    <input type="text" id="edit-title" required class="main-task-input" style="padding: 12px 14px;">
+                </div>
+                <div class="stats-grid-row" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label class="form-group-label">Kategori</label>
+                        <select id="edit-category" class="dropdown-select" style="width: 100%;">
+                            <option value="Kerja">💼 Kerja / Produktif</option>
+                            <option value="Rumah">🏠 Rumah / Rutin</option>
+                            <option value="Kesehatan">🧘 Kesehatan & Olahraga</option>
+                            <option value="Belajar">📚 Belajar & Diri</option>
+                            <option value="Belanja">🛒 Belanja & Urusan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-group-label">Prioritas</label>
+                        <select id="edit-priority" class="dropdown-select" style="width: 100%;">
+                            <option value="Sedang">🟡 Sedang</option>
+                            <option value="Tinggi">🔴 Tinggi</option>
+                            <option value="Santai">🔵 Santai</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-group-label">Target Waktu (Opsional)</label>
+                    <input type="time" id="edit-time" class="time-input" style="width: 100%;">
+                </div>
+                <div>
+                    <label class="form-group-label">Catatan</label>
+                    <textarea id="edit-note" rows="3" class="main-task-input" style="padding: 12px 14px; font-weight: 500;"></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                    <button type="button" id="cancel-edit-btn" class="pill-btn">
+                        Batal
+                    </button>
+                    <button type="submit" class="submit-btn" style="width: auto; padding: 10px 18px;">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Backup & Restore Modal -->
+    <div id="backup-modal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="card-title-group">
+                    <i class="fa-solid fa-database" style="color: #2563eb;"></i>
+                    <h3 class="card-title">Cadangkan & Pulihkan Data</h3>
+                </div>
+                <button id="close-backup-modal-btn" class="icon-btn" style="width: 32px; height: 32px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="form-section" style="gap: 16px;">
+                <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
+                    Anda dapat mencadangkan seluruh daftar tugas Anda ke dalam file JSON atau memulihkannya kembali di perangkat lain.
+                </p>
+                <div class="stats-grid-row" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <button id="export-json-btn" class="app-card" style="align-items: center; text-align: center; cursor: pointer; padding: 16px; background: #eff6ff; border-color: #bfdbfe;">
+                        <i class="fa-solid fa-download" style="font-size: 24px; color: #1e3a8a; margin-bottom: 6px;"></i>
+                        <span style="font-size: 12px; font-weight: 700; color: #1e3a8a;">Unduh Backup (JSON)</span>
+                    </button>
+                    <label class="app-card" style="align-items: center; text-align: center; cursor: pointer; padding: 16px; background: #e0e7ff; border-color: #c7d2fe;">
+                        <i class="fa-solid fa-upload" style="font-size: 24px; color: #4338ca; margin-bottom: 6px;"></i>
+                        <span style="font-size: 12px; font-weight: 700; color: #4338ca;">Impor File Backup</span>
+                        <input type="file" id="import-json-file" accept=".json" style="display: none;">
+                    </label>
+                </div>
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 12px;">
+                    <button id="reset-default-habits-btn" class="pill-btn" style="width: 100%; text-align: center;">
+                        <i class="fa-solid fa-rotate-right"></i> Kembalikan Rutinitas Standar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-wrapper"></div>
+
+    <!-- JavaScript App -->
+    <script src="script.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2329175fb55ce75',t:'MTc4NTM5NTY4NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+</body>
+</html>
